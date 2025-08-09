@@ -1,5 +1,4 @@
 #include <BLEDevice.h>
-//#include <BLEUtils.h>
 #include <BLEScan.h>
 #include <BLEAdvertisedDevice.h>
 #include "ledControl.h"
@@ -22,15 +21,10 @@ void processTasks() {
     BLEAdvertisedDevice device = foundDevices.getDevice(i);
     int8_t rssi = device.getRSSI();
     if (device.haveName() && device.getName().indexOf("Quantum3") != -1) {
-      #ifdef DEBUG
-        Serial.print("Detected: "); Serial.print(device.getName());
-      #endif
-      //Serial.print(" RSSI: "); Serial.println(rssi);
       if (rssi > maxRSSI) maxRSSI = rssi;
     }
   }
   lastRSSI = maxRSSI;
-  //Serial.print(F("Selected RSSI: ")); Serial.println(lastRSSI);
   manageHardWare(lastRSSI,ledType);
   pBLEScan->clearResults();
 }

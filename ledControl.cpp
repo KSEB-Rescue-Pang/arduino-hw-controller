@@ -3,7 +3,6 @@
 #include "loadCell.h"
 #include "utils.h"
 
-extern int lastRSSI;
 
 char ledType[10] = {0};
 char workerId[10] = {0};
@@ -37,8 +36,6 @@ void manageHardWare(int rssi, const char* led) {
     }
     digitalWrite(YELLOW_PIN, LOW);
     digitalWrite(GREEN_PIN, LOW);
-  } else {
-    Serial.println(F("가까이 있는 핸드폰이 잡히지 않습닌다."));
   }
 }
 
@@ -55,13 +52,6 @@ void turnOnLED(const char* ledType) {
   int pin = getPinForLED(ledType);
   if (pin != -1) {
     digitalWrite(pin, HIGH);
-    #ifdef DEBUG
-      Serial.print("LED ON: ");
-      Serial.print(ledType);
-    #endif
-    //Serial.print(" (핀번호: ");
-    //Serial.print(pin);
-    //Serial.println(")");
   }
 }
 
@@ -69,24 +59,15 @@ void turnOffLED(const char* ledType) {
   int pin = getPinForLED(ledType);
   if (pin != -1) {
     digitalWrite(pin, LOW);
-    #ifdef DEBUG
-      Serial.print("LED OFF: ");
-      Serial.print(ledType);
-    #endif
-    //Serial.print(" (핀번호: ");
-    //Serial.print(pin);
-    //Serial.println(")");
   }
 }
 
 void ledControl(const char* jsonBuffer) {
-  StaticJsonDocument<100> doc;
+  StaticJsonDocument<200> doc;
   if (!parseJson(jsonBuffer, doc)) {
-    // 파싱 실패 처리
     return;
   }
 
-  // JSON에서 값 복사 (최대 크기 -1 까지 복사 후 null 문자 추가)
   strncpy(ledType, doc["work_type"] | "", sizeof(ledType) - 1);
   ledType[sizeof(ledType) - 1] = '\0';
 
@@ -94,14 +75,8 @@ void ledControl(const char* jsonBuffer) {
   workerId[sizeof(workerId) - 1] = '\0';
 
   if (strcmp(workerId, "2011") != 0) {
-    #ifdef DEBUG
-      Serial.println(F("작업자 아이디가 일치하지 않아서 동작하지 않습니다."));
-    #endif
     return;
   }
 
   turnOnLED(ledType);
-  #ifdef DEBUG
-    Serial.println(F("현재 ESP위치의 LED를 켭니다."));
-  #endif
 }

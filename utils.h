@@ -1,3 +1,3 @@
 #pragma once
 #include <ArduinoJson.h>
-bool parseJson(const char* jsonBuffer, StaticJsonDocument<100>& doc);
+bool parseJson(const char* jsonBuffer, StaticJsonDocument<200>& doc);

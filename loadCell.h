@@ -1,8 +1,5 @@
 #ifndef LOAD_CELL_H
 #define LOAD_CELL_H
-#include <map>
-#include <vector>
-//#include <string>
 #include <Arduino.h>
 #include <PubSubClient.h>
 #include <WiFiClientSecure.h>
@@ -14,8 +11,10 @@ struct ProductInfo {
   int quantity;
 };
 
+#define MAX_PRODUCTS 10
 extern WiFiClientSecure secureClient;
 extern PubSubClient mqttClient; 
-extern std::vector<const char*> myVector;
-extern std::map<const char*, ProductInfo> productMap;
+extern const char* productIds[MAX_PRODUCTS];
+extern ProductInfo products[MAX_PRODUCTS];
+extern int productCount;
 #endif
