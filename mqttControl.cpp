@@ -33,8 +33,14 @@ void connectMQTT() {
   // (1) TLS 인증서 검증을 위해 시간 먼저 맞춤
   //ensureTimeSynced();
 
+  // MAC Address 기반 고유 클라이언트 ID 생성
+  String macAddr = WiFi.macAddress();
+  macAddr.replace(":", ""); // 콜론 제거
   char clientId[25];
-  sprintf(clientId, "ESP-%04X", random(0xFFFF));
+  sprintf(clientId, "ESP32-%s", macAddr.substring(6).c_str()); // 뒷 6자리 사용
+  
+  Serial.print("[MQTT] 🆔 클라이언트 ID: ");
+  Serial.println(clientId);
   wifiClient.setInsecure();
   // (2) 루트 CA 등록 (ISRG Root X1)
   //wifiClient.setCACert(root_ca);
