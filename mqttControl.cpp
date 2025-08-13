@@ -9,7 +9,8 @@
 
 //#include <Arduino.h>
 #define DEBUG
-const char* ledControlTopic = "server/A01-R01/assign";
+// 모든 선반의 assign 메시지를 수신하기 위한 와일드카드 토픽
+const char* ledControlTopic = "server/+/assign";
 //const char* ledControlTopic = "test/topic";
 
 // static void ensureTimeSynced() {
@@ -64,46 +65,26 @@ void connectMQTT() {
     #ifdef DEBUG  
       Serial.println("[MQTT] 연결 성공");
     #endif
-    // 다양한 QoS 레벨로 여러 토픽 구독
-    Serial.println("[MQTT] 🔧 다중 토픽 구독 시작...");
+    // 메인 토픽과 추가 진단용 토픽들 구독
+    Serial.println("[MQTT] 🔧 토픽 구독 시작...");
     
-    // 1. 기본 토픽을 QoS 0, 1, 2로 구독
-    bool sub0 = mqttClient.subscribe(ledControlTopic, 0);
-    bool sub1 = mqttClient.subscribe(ledControlTopic, 1);
-    bool sub2 = mqttClient.subscribe(ledControlTopic, 2);
-    
-    Serial.print("[MQTT] 📍 ");
+    // 1. 메인 와일드카드 토픽 (모든 선반의 assign 메시지)
+    bool mainSub = mqttClient.subscribe(ledControlTopic, 1);
+    Serial.print("[MQTT] 📍 메인 토픽: ");
     Serial.print(ledControlTopic);
-    Serial.print(" → QoS0: ");
-    Serial.print(sub0 ? "✅" : "❌");
-    Serial.print(", QoS1: ");
-    Serial.print(sub1 ? "✅" : "❌");
-    Serial.print(", QoS2: ");
-    Serial.println(sub2 ? "✅" : "❌");
+    Serial.println(mainSub ? " ✅" : " ❌");
     
-    // 2. 와일드카드 토픽들 구독
-    String wildcardTopic1 = "server/A01-R01/+";
-    String wildcardTopic2 = "server/+/assign";
-    String wildcardTopic3 = "server/#";
+    // 2. 추가 진단용 토픽들
+    bool allServerSub = mqttClient.subscribe("server/#", 0);  // 모든 server 토픽
+    bool specificSub = mqttClient.subscribe("server/A01-R01/assign", 1);  // 특정 선반 (기존)
     
-    bool wildSub1 = mqttClient.subscribe(wildcardTopic1.c_str(), 1);
-    bool wildSub2 = mqttClient.subscribe(wildcardTopic2.c_str(), 1);
-    bool wildSub3 = mqttClient.subscribe(wildcardTopic3.c_str(), 0);
+    Serial.println("[MQTT] 🔍 진단용 토픽:");
+    Serial.print("   server/# → ");
+    Serial.println(allServerSub ? "✅" : "❌");
+    Serial.print("   server/A01-R01/assign → ");
+    Serial.println(specificSub ? "✅" : "❌");
     
-    Serial.print("[MQTT] 🌟 와일드카드 구독 결과:");
-    Serial.println();
-    Serial.print("   ");
-    Serial.print(wildcardTopic1);
-    Serial.println(wildSub1 ? " ✅" : " ❌");
-    Serial.print("   ");
-    Serial.print(wildcardTopic2);
-    Serial.println(wildSub2 ? " ✅" : " ❌");
-    Serial.print("   ");
-    Serial.print(wildcardTopic3);
-    Serial.println(wildSub3 ? " ✅" : " ❌");
-    
-    // 3. 자가 테스트 메시지 발송 (30초 후)
-    Serial.println("[MQTT] 🧪 30초 후 자가 테스트 메시지 발송 예정");
+    Serial.println("[MQTT] 🎯 이제 모든 선반(A01-R01, A01-R02, ...)의 메시지를 수신할 수 있습니다!");
     //Serial.println(ledControlTopic);
   } else {
     #ifdef DEBUG
@@ -227,11 +208,30 @@ void callback(char *topic, uint8_t* payload,unsigned int length){
   Serial.println("'");
   Serial.println("========================================");
   
-  // 토픽별 처리 로그
-  if (strcmp(topic, "server/A01-R01/assign") == 0) {
-    Serial.println("✅ 정확한 타겟 토픽으로 수신됨!");
+  // 토픽별 처리 로그 및 선반 ID 추출
+  Serial.print("🏷️ 토픽 분석: ");
+  
+  // server/{shelf_id}/assign 형태에서 shelf_id 추출
+  String topicStr = String(topic);
+  if (topicStr.startsWith("server/") && topicStr.endsWith("/assign")) {
+    // "server/"와 "/assign" 사이의 shelf_id 추출
+    int startIdx = 7; // "server/" 길이
+    int endIdx = topicStr.lastIndexOf("/assign");
+    if (endIdx > startIdx) {
+      String shelfId = topicStr.substring(startIdx, endIdx);
+      Serial.print("선반 ID = ");
+      Serial.print(shelfId);
+      
+      if (shelfId == "A01-R01") {
+        Serial.println(" (메인 타겟 선반) ✅");
+      } else {
+        Serial.print(" (다른 선반) → 이제 정상 처리 가능! ✅");
+      }
+    } else {
+      Serial.println("토픽 형식 오류");
+    }
   } else {
-    Serial.println("ℹ️ 와일드카드 토픽으로 수신됨");
+    Serial.println("예상과 다른 토픽 형식");
   }
   
   ledControl(jsonBuffer);

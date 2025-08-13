@@ -87,14 +87,27 @@ void loop() {
   
   mqttClient.loop(); // mqtt 연결 유지
   
-  // 연결 후 30초 뒤 자가 테스트 메시지 발송 (한 번만)
+  // 연결 후 30초 뒤 다양한 선반으로 자가 테스트 메시지 발송
   if (mqttClient.connected() && !testMessageSent && (currentTime - connectionTime > 30000)) {
-    Serial.println("🧪 자가 테스트 메시지 발송 중...");
+    Serial.println("🧪 다양한 선반으로 자가 테스트 메시지 발송 중...");
     String testMessage = "{\"work_type\":\"IB\",\"worker_id\":\"1237\",\"products\":[{\"product_id\":\"TEST001\",\"weight\":10.5,\"quantity\":1}]}";
-    bool published = mqttClient.publish("server/A01-R01/assign", testMessage.c_str());
-    Serial.print("📤 테스트 메시지 발송: ");
-    Serial.println(published ? "✅ 성공" : "❌ 실패");
-    Serial.print("📄 발송 내용: ");
+    
+    // 여러 선반에 테스트 메시지 발송
+    String testTopics[] = {
+      "server/A01-R01/assign",
+      "server/A01-R02/assign", 
+      "server/B01-R01/assign"
+    };
+    
+    for (int i = 0; i < 3; i++) {
+      bool published = mqttClient.publish(testTopics[i].c_str(), testMessage.c_str());
+      Serial.print("📤 ");
+      Serial.print(testTopics[i]);
+      Serial.print(" → ");
+      Serial.println(published ? "✅" : "❌");
+    }
+    
+    Serial.print("📄 테스트 메시지: ");
     Serial.println(testMessage);
     testMessageSent = true;
   }
