@@ -48,12 +48,17 @@ int getPinForLED(const char* ledType) {
 }
 
 void turnOnLED(const char* ledType) {
+  Serial.print("turnOnLED() 호출됨. ledType: ");
+  Serial.println(ledType);
+  
   int pin = getPinForLED(ledType);
   if (pin != -1) {
-    Serial.println("led on");
+    Serial.print("✅ LED 켜짐 - Pin: ");
+    Serial.println(pin);
     digitalWrite(pin, HIGH);
-  }else{
-    Serial.println("led on fail");
+  } else {
+    Serial.print("❌ LED 켜기 실패 - 잘못된 ledType: ");
+    Serial.println(ledType);
   }
 }
 
@@ -65,13 +70,28 @@ void turnOffLED(const char* ledType) {
 }
 
 void ledControl(const char* jsonBuffer) {
+  Serial.println("=== ledControl() 시작 ===");
+  Serial.print("수신된 JSON: ");
+  Serial.println(jsonBuffer);
+  
   StaticJsonDocument<150> doc;
   if (!parseJson(jsonBuffer, doc)) {
+    Serial.println("❌ JSON 파싱 실패");
     return;
   }
+  Serial.println("✅ JSON 파싱 성공");
 
   memset(ledType, 0, sizeof(ledType));
   memset(workerId, 0, sizeof(workerId));
+
+  if (!doc.containsKey("work_type")) {
+    Serial.println("❌ work_type 필드가 없음");
+    return;
+  }
+  if (!doc.containsKey("worker_id")) {
+    Serial.println("❌ worker_id 필드가 없음");
+    return;
+  }
 
   strncpy(ledType, doc["work_type"] | "", sizeof(ledType) - 1);
   ledType[sizeof(ledType) - 1] = '\0';
@@ -79,8 +99,20 @@ void ledControl(const char* jsonBuffer) {
   strncpy(workerId, doc["worker_id"] | "", sizeof(workerId) - 1);
   workerId[sizeof(workerId) - 1] = '\0';
 
+  Serial.print("파싱된 work_type: ");
+  Serial.println(ledType);
+  Serial.print("파싱된 worker_id: ");
+  Serial.println(workerId);
+
   if (strcmp(workerId, "1237") != 0) {
+    Serial.print("❌ Worker ID 불일치. 예상: 1237, 실제: ");
+    Serial.println(workerId);
     return;
   }
+  Serial.println("✅ Worker ID 검증 성공");
+  
+  Serial.print("LED 켜기 시도: ");
+  Serial.println(ledType);
   turnOnLED(ledType);
+  Serial.println("=== ledControl() 완료 ===");
 }
