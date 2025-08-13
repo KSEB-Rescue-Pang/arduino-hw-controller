@@ -34,6 +34,5 @@ void loop() {
     lastStatusCheck = currentTime;
   }
   
-  processTasks();
   delay(2000); 
 }
