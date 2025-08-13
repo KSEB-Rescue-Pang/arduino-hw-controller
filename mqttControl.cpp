@@ -58,23 +58,46 @@ void connectMQTT() {
     #ifdef DEBUG  
       Serial.println("[MQTT] 연결 성공");
     #endif
-    // QoS 1로 구독 시도 (메시지 전달 보장)
-    bool subscribed = mqttClient.subscribe(ledControlTopic, 1);
-    if (subscribed) {
-        Serial.print("[MQTT] ✅ 구독 성공 (QoS 1) → 토픽: ");
-        Serial.println(ledControlTopic);
-        
-        // 추가로 와일드카드 토픽도 구독해서 테스트
-        String wildcardTopic = "server/A01-R01/+";
-        bool wildcardSubscribed = mqttClient.subscribe(wildcardTopic.c_str(), 1);
-        Serial.print("[MQTT] 와일드카드 구독: ");
-        Serial.print(wildcardSubscribed ? "✅ 성공" : "❌ 실패");
-        Serial.print(" → ");
-        Serial.println(wildcardTopic);
-    } else {
-        Serial.print("[MQTT] ❌ 구독 실패 → 토픽: ");
-        Serial.println(ledControlTopic);
-    }
+    // 다양한 QoS 레벨로 여러 토픽 구독
+    Serial.println("[MQTT] 🔧 다중 토픽 구독 시작...");
+    
+    // 1. 기본 토픽을 QoS 0, 1, 2로 구독
+    bool sub0 = mqttClient.subscribe(ledControlTopic, 0);
+    bool sub1 = mqttClient.subscribe(ledControlTopic, 1);
+    bool sub2 = mqttClient.subscribe(ledControlTopic, 2);
+    
+    Serial.print("[MQTT] 📍 ");
+    Serial.print(ledControlTopic);
+    Serial.print(" → QoS0: ");
+    Serial.print(sub0 ? "✅" : "❌");
+    Serial.print(", QoS1: ");
+    Serial.print(sub1 ? "✅" : "❌");
+    Serial.print(", QoS2: ");
+    Serial.println(sub2 ? "✅" : "❌");
+    
+    // 2. 와일드카드 토픽들 구독
+    String wildcardTopic1 = "server/A01-R01/+";
+    String wildcardTopic2 = "server/+/assign";
+    String wildcardTopic3 = "server/#";
+    
+    bool wildSub1 = mqttClient.subscribe(wildcardTopic1.c_str(), 1);
+    bool wildSub2 = mqttClient.subscribe(wildcardTopic2.c_str(), 1);
+    bool wildSub3 = mqttClient.subscribe(wildcardTopic3.c_str(), 0);
+    
+    Serial.print("[MQTT] 🌟 와일드카드 구독 결과:");
+    Serial.println();
+    Serial.print("   ");
+    Serial.print(wildcardTopic1);
+    Serial.println(wildSub1 ? " ✅" : " ❌");
+    Serial.print("   ");
+    Serial.print(wildcardTopic2);
+    Serial.println(wildSub2 ? " ✅" : " ❌");
+    Serial.print("   ");
+    Serial.print(wildcardTopic3);
+    Serial.println(wildSub3 ? " ✅" : " ❌");
+    
+    // 3. 자가 테스트 메시지 발송 (30초 후)
+    Serial.println("[MQTT] 🧪 30초 후 자가 테스트 메시지 발송 예정");
     //Serial.println(ledControlTopic);
   } else {
     #ifdef DEBUG
@@ -171,24 +194,46 @@ void connectMQTT() {
 void callback(char *topic, uint8_t* payload,unsigned int length){
   Serial.println("🔔🔔🔔 CALLBACK 함수 호출됨! 🔔🔔🔔");
   Serial.println("========================================");
-  Serial.print("📍 수신된 토픽: ");
-  Serial.println(topic);
+  Serial.print("⏰ 시간: ");
+  Serial.println(millis());
+  Serial.print("📍 수신된 토픽: '");
+  Serial.print(topic);
+  Serial.println("'");
   Serial.print("📏 메시지 길이: ");
   Serial.println(length);
+  
+  // 메시지 내용을 16진수로도 출력 (디버깅용)
+  Serial.print("🔍 Raw bytes: ");
+  for (unsigned int i = 0; i < length && i < 50; i++) {
+    Serial.print("0x");
+    if (payload[i] < 16) Serial.print("0");
+    Serial.print(payload[i], HEX);
+    Serial.print(" ");
+  }
+  Serial.println();
   
   char jsonBuffer[length + 1];
   memcpy(jsonBuffer, payload, length);
   jsonBuffer[length] = '\0';
   
-  Serial.print("📄 수신된 메시지 내용: ");
-  Serial.println(jsonBuffer);
+  Serial.print("📄 수신된 메시지 내용: '");
+  Serial.print(jsonBuffer);
+  Serial.println("'");
   Serial.println("========================================");
+  
+  // 토픽별 처리 로그
+  if (strcmp(topic, "server/A01-R01/assign") == 0) {
+    Serial.println("✅ 정확한 타겟 토픽으로 수신됨!");
+  } else {
+    Serial.println("ℹ️ 와일드카드 토픽으로 수신됨");
+  }
   
   ledControl(jsonBuffer);
   getProductInformation(jsonBuffer);
   processTasks();
   
   Serial.println("✅ Callback 처리 완료");
+  Serial.println();
 }
 
 void getProductInformation(const char* jsonBuffer){
