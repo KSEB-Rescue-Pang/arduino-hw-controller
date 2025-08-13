@@ -8,9 +8,48 @@
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  
+  Serial.println("=====================================");
+  Serial.println("🔧 ESP32 하드웨어 컨트롤러 시작");
+  Serial.println("=====================================");
+  
+  // ESP32 고유 정보 출력
+  Serial.println("📟 ESP32 정보:");
+  Serial.print("   MAC Address: ");
+  Serial.println(WiFi.macAddress());
+  
+  uint64_t chipid = ESP.getEfuseMac();
+  Serial.printf("   Chip ID: %04X%08X\n", (uint16_t)(chipid>>32), (uint32_t)chipid);
+  
+  Serial.print("   Flash Size: ");
+  Serial.print(ESP.getFlashChipSize() / (1024 * 1024));
+  Serial.println(" MB");
+  
+  Serial.println("-------------------------------------");
+  
   setLED();
   setLoadCell();
   connectWiFi();
+  
+  // WiFi 연결 후 네트워크 정보 출력
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("🌐 네트워크 정보:");
+    Serial.print("   연결된 SSID: ");
+    Serial.println(WiFi.SSID());
+    Serial.print("   IP Address: ");
+    Serial.println(WiFi.localIP());
+    Serial.print("   Gateway: ");
+    Serial.println(WiFi.gatewayIP());
+    Serial.print("   DNS: ");
+    Serial.println(WiFi.dnsIP());
+    Serial.print("   Signal Strength: ");
+    Serial.print(WiFi.RSSI());
+    Serial.println(" dBm");
+  }
+  
+  Serial.println("=====================================");
+  Serial.println("✅ 초기화 완료 - 메인 루프 시작");
+  Serial.println("=====================================");
 }
 
 void loop() {
