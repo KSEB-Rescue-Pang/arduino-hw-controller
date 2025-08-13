@@ -13,11 +13,8 @@ void setup() {
   Serial.println("🔧 ESP32 하드웨어 컨트롤러 시작");
   Serial.println("=====================================");
   
-  // ESP32 고유 정보 출력
-  Serial.println("📟 ESP32 정보:");
-  Serial.print("   MAC Address: ");
-  Serial.println(WiFi.macAddress());
-  
+  // 기본 하드웨어 정보 (WiFi 없이 가능한 것들)
+  Serial.println("📟 ESP32 하드웨어 정보:");
   uint64_t chipid = ESP.getEfuseMac();
   Serial.printf("   Chip ID: %04X%08X\n", (uint16_t)(chipid>>32), (uint32_t)chipid);
   
@@ -25,29 +22,50 @@ void setup() {
   Serial.print(ESP.getFlashChipSize() / (1024 * 1024));
   Serial.println(" MB");
   
+  Serial.print("   Free Heap: ");
+  Serial.print(ESP.getFreeHeap());
+  Serial.println(" bytes");
+  
   Serial.println("-------------------------------------");
+  Serial.println("🔧 하드웨어 초기화 중...");
   
   setLED();
   setLoadCell();
+  
+  Serial.println("🌐 WiFi 연결 시도 중...");
   connectWiFi();
   
-  // WiFi 연결 후 네트워크 정보 출력
+  // WiFi 연결 후 완전한 네트워크 정보 출력
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("🌐 네트워크 정보:");
+    Serial.println("=====================================");
+    Serial.println("✅ WiFi 연결 성공!");
+    Serial.println("📡 네트워크 상세 정보:");
+    
+    // 이제 정확한 MAC Address 출력 가능
+    Serial.print("   MAC Address: ");
+    Serial.println(WiFi.macAddress());
+    
     Serial.print("   연결된 SSID: ");
     Serial.println(WiFi.SSID());
     Serial.print("   IP Address: ");
     Serial.println(WiFi.localIP());
+    Serial.print("   Subnet Mask: ");
+    Serial.println(WiFi.subnetMask());
     Serial.print("   Gateway: ");
     Serial.println(WiFi.gatewayIP());
-    Serial.print("   DNS: ");
+    Serial.print("   DNS Server: ");
     Serial.println(WiFi.dnsIP());
     Serial.print("   Signal Strength: ");
     Serial.print(WiFi.RSSI());
     Serial.println(" dBm");
+    
+    Serial.println("=====================================");
+  } else {
+    Serial.println("❌ WiFi 연결 실패!");
+    Serial.print("   상태 코드: ");
+    Serial.println(WiFi.status());
   }
   
-  Serial.println("=====================================");
   Serial.println("✅ 초기화 완료 - 메인 루프 시작");
   Serial.println("=====================================");
 }
