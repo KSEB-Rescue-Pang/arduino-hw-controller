@@ -57,9 +57,6 @@ bool calibrateWeightStep(int led, int idx, float outBoundStandard) {
             Serial.printf("제품 %d 입고 완료\n", idx);
             return true;
         } else {
-            doc["code"] = "bad";
-            serializeJson(doc, buffer);
-            client.publish(sendTopic, buffer);
             Serial.printf("제품 %d 입고 대기 중...\n", idx);
             return false;
         }
@@ -83,9 +80,6 @@ bool calibrateWeightStep(int led, int idx, float outBoundStandard) {
             Serial.printf("제품 %d 출고 완료\n", idx);
             return true;
         } else {
-            doc["code"] = "bad";
-            serializeJson(doc, buffer);
-            client.publish(sendTopic, buffer);
             Serial.printf("제품 %d 출고 대기 중...\n", idx);
             return false;
         }
